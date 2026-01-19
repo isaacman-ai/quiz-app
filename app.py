@@ -2,10 +2,13 @@ import streamlit as st
 import json
 
 # ==========================================
-# 1. 這裡貼上 NotebookLM 生成的 JSON 數據
+# 1. 題目來源設定 (Sidebar)
 # ==========================================
-# 範例數據 (你可以直接把 NotebookLM 的輸出取代這裡)
-quiz_json = """
+st.sidebar.header("題目設定")
+source_option = st.sidebar.selectbox("選擇題目來源", ["預設題目", "貼上 JSON 代碼", "上傳 JSON 檔案"])
+
+# 預設題目數據
+default_quiz_json = """
 [
   {
     "question": "植物進行光合作用主要的場所是哪裡？",
@@ -22,16 +25,56 @@ quiz_json = """
 ]
 """
 
-# 將 JSON 字串轉換為 Python list
+quiz_data = []
+
 try:
-    quiz_data = json.loads(quiz_json)
-except json.JSONDecodeError:
-    st.error("JSON 格式錯誤，請檢查 NotebookLM 的輸出是否包含多餘文字。")
+    if source_option == "預設題目":
+        quiz_data = json.loads(default_quiz_json)
+    
+    elif source_option == "貼上 JSON 代碼":
+        user_input = st.sidebar.text_area("請貼上 NotebookLM 生成的 JSON", height=200, help="請直接貼上 [...] 格式的 JSON 陣列")
+        if user_input.strip():
+            quiz_data = json.loads(user_input)
+        else:
+            st.info("👈 請在左側貼上題目 JSON")
+            st.stop()
+
+    elif source_option == "上傳 JSON 檔案":
+        uploaded_file = st.sidebar.file_uploader("上傳 .json 檔案", type=["json"])
+        if uploaded_file is not None:
+            quiz_data = json.load(uploaded_file)
+        else:
+            st.info("👈 請在左側上傳題目 JSON 檔案")
+            st.stop()
+
+except json.JSONDecodeError as e:
+    st.sidebar.error(f"JSON 格式錯誤：{e}")
     st.stop()
+except Exception as e:
+    st.sidebar.error(f"發生錯誤：{e}")
+    st.stop()
+
+# 檢查題目格式是否正確 (簡單檢查)
+if quiz_data and (not isinstance(quiz_data, list) or "question" not in quiz_data[0]):
+    st.error("JSON 格式不正確，必須是包含題目物件的 List `[...]`。")
+    st.stop()
+
+# 重置按鈕
+if st.sidebar.button("🔄 重置測驗"):
+    for key in st.session_state.keys():
+        del st.session_state[key]
+    st.rerun()
+
 
 # ==========================================
 # 2. 初始化 Session State (用來記憶變數)
 # ==========================================
+# 為了避免換題目時 index 超出範圍，這裡做個檢查
+if 'current_q_index' in st.session_state and st.session_state.current_q_index >= len(quiz_data):
+    st.session_state.current_q_index = 0
+    st.session_state.score = 0
+    st.session_state.quiz_finished = False
+
 if 'current_q_index' not in st.session_state:
     st.session_state.current_q_index = 0
 if 'score' not in st.session_state:
