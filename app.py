@@ -7,94 +7,100 @@ import os
 # ==========================================
 st.set_page_config(page_title="溫習 Quiz", page_icon="📝")
 
-# 自訂 CSS (兒童風格)
+# 自訂 CSS (現代簡約風格)
 st.markdown("""
 <style>
-/* 全域字體 */
+/* 引入 Google Fonts (Inter) - 雖然 Streamlit 預設有，但強制指定比較保險 */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+/* 全域設定 */
 html, body, [class*="css"] {
-    font-family: 'Comic Sans MS', 'Chalkboard SE', 'Arial Rounded MT Bold', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: #334155; /* Slate-700 */
 }
 
-/* 背景顏色與圖案 */
+/* 背景顏色 */
 .stApp {
-    background-color: #E0F7FA; /* 淡藍色背景 */
-    background-image: radial-gradient(#B2EBF2 20%, transparent 20%),
-                      radial-gradient(#B2EBF2 20%, transparent 20%);
-    background-position: 0 0, 10px 10px;
-    background-size: 20px 20px;
+    background-color: #f8fafc; /* Slate-50 */
 }
 
 /* 題目卡片 */
 .question-card {
-    background-color: #FFFFFF;
-    padding: 30px;
-    border-radius: 20px;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-    border: 4px solid #FFAB91; /* 橘粉色邊框 */
-    margin-bottom: 25px;
-    text-align: center;
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    margin-bottom: 30px;
+    border: 1px solid #e2e8f0;
+}
+
+.question-header {
+    font-size: 14px;
+    color: #64748b; /* Slate-500 */
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    margin-bottom: 12px;
 }
 
 .question-text {
-    font-size: 28px !important;
-    color: #37474F;
-    font-weight: bold;
-    line-height: 1.5;
+    font-size: 24px !important;
+    color: #1e293b; /* Slate-800 */
+    font-weight: 600;
+    line-height: 1.6;
 }
 
-/* 按鈕美化 */
+/* 按鈕美化 (Primary) */
 .stButton button {
-    background: linear-gradient(to bottom, #FFEB3B, #FDD835) !important; /* 黃色漸層 */
-    color: #5D4037 !important;
-    border: 3px solid #FBC02D !important;
-    border-radius: 30px !important;
-    font-size: 22px !important;
-    padding: 10px 40px !important;
-    font-weight: bold !important;
-    box-shadow: 0 5px 0 #F9A825 !important;
-    transition: all 0.1s;
-    width: 100%;
+    background-color: #3b82f6 !important; /* Blue-500 */
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0.6rem 1.2rem !important;
+    font-size: 16px !important;
+    font-weight: 500 !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06) !important;
+    transition: all 0.2s ease;
 }
 
 .stButton button:hover {
-    transform: translateY(3px) !important;
-    box-shadow: 0 2px 0 #F9A825 !important;
-    background: linear-gradient(to bottom, #FFF176, #FFEE58) !important;
+    background-color: #2563eb !important; /* Blue-600 */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+    transform: translateY(-1px);
 }
 
 .stButton button:active {
-    transform: translateY(5px) !important;
-    box-shadow: none !important;
+    transform: translateY(0);
 }
 
 /* 側邊欄 */
 [data-testid="stSidebar"] {
-    background-color: #FFF3E0;
-    border-right: 3px dashed #FFCC80;
+    background-color: #ffffff;
+    border-right: 1px solid #e2e8f0;
 }
 
 /* 選項 Radio Button */
-.stRadio label {
-    font-size: 20px !important;
-    background-color: rgba(255,255,255,0.6);
-    padding: 10px;
-    border-radius: 10px;
-    margin-bottom: 5px;
-    border: 2px solid transparent;
-    cursor: pointer;
+/* 讓選項有卡片感，更容易點選 */
+.stRadio div[role="radiogroup"] > label {
+    background-color: #ffffff;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 8px;
     transition: all 0.2s;
-    display: block; /* 讓選項佔滿寬度 */
+    cursor: pointer;
 }
 
-.stRadio label:hover {
-    background-color: #FFFFFF;
-    border-color: #4DB6AC;
-    transform: scale(1.02);
+.stRadio div[role="radiogroup"] > label:hover {
+    border-color: #cbd5e1;
+    background-color: #f1f5f9;
 }
+
+/* 選中狀態 (Streamlit 比較難精確選中，這裡做個通用的 hover 強化) */
 
 /* 進度條顏色 */
 .stProgress > div > div > div > div {
-    background-color: #4DB6AC;
+    background-color: #3b82f6;
 }
 
 </style>
@@ -305,7 +311,7 @@ else:
     # st.subheader(f"Q{st.session_state.current_q_index + 1}: {question_data['question']}")
     st.markdown(f"""
     <div class="question-card">
-        <div style="font-size: 20px; color: #EF5350; margin-bottom: 10px;">Question {st.session_state.current_q_index + 1}</div>
+        <div class="question-header">Question {st.session_state.current_q_index + 1}</div>
         <div class="question-text">{question_data['question']}</div>
     </div>
     """, unsafe_allow_html=True)
