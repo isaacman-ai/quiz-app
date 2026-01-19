@@ -1,5 +1,6 @@
 import streamlit as st
 import json
+import os
 
 # ==========================================
 # 1. 題目來源設定 (Sidebar)
@@ -9,6 +10,22 @@ st.sidebar.header("題目設定")
 # 初始化題庫 (如果沒有的話)
 if 'quiz_library' not in st.session_state:
     st.session_state.quiz_library = {}
+
+# 自動載入 quizzes/ 資料夾中的題目 (Persistent Library)
+quizzes_dir = "quizzes"
+if os.path.exists(quizzes_dir):
+    for filename in os.listdir(quizzes_dir):
+        if filename.endswith(".json"):
+            file_path = os.path.join(quizzes_dir, filename)
+            try:
+                with open(file_path, "r", encoding="utf-8") as f: # 指定 utf-8 以防亂碼
+                    data = json.load(f)
+                    # 簡單格式檢查
+                    if isinstance(data, list) and len(data) > 0 and "question" in data[0]:
+                        st.session_state.quiz_library[filename] = data
+            except Exception as e:
+                # 這裡不特別顯示錯誤在 UI，以免干擾，僅在後端紀錄
+                print(f"Error loading {filename}: {e}")
 
 # 預設題目數據
 default_quiz_json = """
