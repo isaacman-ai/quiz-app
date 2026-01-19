@@ -154,6 +154,8 @@ else:
         
         if st.session_state.user_choice == question_data['answer']:
             st.success("✅ 答對了！")
+            # 這裡可以換成你喜歡的圖片/GIF網址
+            st.image("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbmM1cHR4cGlueDN4aGZ6b3Z4aGZ6b3Z4aGZ6b3Z4aGZ6b3Z4aGZ6b3Z4/nNxT5qXR02jBO/giphy.gif", width=200) 
         else:
             st.error(f"❌ 答錯了！")
             st.markdown(f"**正確答案是：** `{question_data['answer']}`")
