@@ -5,7 +5,10 @@ import json
 # 1. 題目來源設定 (Sidebar)
 # ==========================================
 st.sidebar.header("題目設定")
-source_option = st.sidebar.selectbox("選擇題目來源", ["預設題目", "貼上 JSON 代碼", "上傳 JSON 檔案"])
+
+# 初始化題庫 (如果沒有的話)
+if 'quiz_library' not in st.session_state:
+    st.session_state.quiz_library = {}
 
 # 預設題目數據
 default_quiz_json = """
@@ -25,45 +28,78 @@ default_quiz_json = """
 ]
 """
 
-quiz_data = []
+# 確保預設題目在庫中
+if "預設題目" not in st.session_state.quiz_library:
+    try:
+        st.session_state.quiz_library["預設題目"] = json.loads(default_quiz_json)
+    except:
+        pass
 
-try:
-    if source_option == "預設題目":
-        quiz_data = json.loads(default_quiz_json)
+# 上傳區塊
+uploaded_files = st.sidebar.file_uploader("上傳 .json 檔案 (可多選)", type=["json"], accept_multiple_files=True)
+
+if uploaded_files:
+    for uploaded_file in uploaded_files:
+        # 使用檔名作為 key
+        file_name = uploaded_file.name
+        if file_name not in st.session_state.quiz_library:
+            try:
+                data = json.load(uploaded_file)
+                # 簡單格式檢查
+                if isinstance(data, list) and len(data) > 0 and "question" in data[0]:
+                     st.session_state.quiz_library[file_name] = data
+                else:
+                    st.sidebar.warning(f"{file_name} 格式不正確，已略過。")
+            except Exception as e:
+                st.sidebar.error(f"讀取 {file_name} 失敗: {e}")
+
+# 選擇目前要做的題目
+if st.session_state.quiz_library:
+    # 讓使用者選擇
+    selected_quiz_name = st.sidebar.selectbox("選擇測驗主題", list(st.session_state.quiz_library.keys()))
     
-    elif source_option == "貼上 JSON 代碼":
-        user_input = st.sidebar.text_area("請貼上 NotebookLM 生成的 JSON", height=200, help="請直接貼上 [...] 格式的 JSON 陣列")
-        if user_input.strip():
-            quiz_data = json.loads(user_input)
-        else:
-            st.info("👈 請在左側貼上題目 JSON")
-            st.stop()
+    # 載入選中的題目
+    quiz_data = st.session_state.quiz_library[selected_quiz_name]
+    
+    # 如果切換了題目，重置進度 (但如果是因為 rerun 導致的重跑則不重置)
+    if 'current_quiz_name' not in st.session_state:
+        st.session_state.current_quiz_name = selected_quiz_name
+        
+    if st.session_state.current_quiz_name != selected_quiz_name:
+        st.session_state.current_quiz_name = selected_quiz_name
+        st.session_state.current_q_index = 0
+        st.session_state.score = 0
+        st.session_state.quiz_finished = False
+        st.session_state.answer_submitted = False
+        st.rerun()
 
-    elif source_option == "上傳 JSON 檔案":
-        uploaded_file = st.sidebar.file_uploader("上傳 .json 檔案", type=["json"])
-        if uploaded_file is not None:
-            quiz_data = json.load(uploaded_file)
-        else:
-            st.info("👈 請在左側上傳題目 JSON 檔案")
-            st.stop()
-
-except json.JSONDecodeError as e:
-    st.sidebar.error(f"JSON 格式錯誤：{e}")
+else:
+    st.error("目前沒有任何題目，請上傳 JSON。")
     st.stop()
-except Exception as e:
-    st.sidebar.error(f"發生錯誤：{e}")
-    st.stop()
-
-# 檢查題目格式是否正確 (簡單檢查)
-if quiz_data and (not isinstance(quiz_data, list) or "question" not in quiz_data[0]):
-    st.error("JSON 格式不正確，必須是包含題目物件的 List `[...]`。")
-    st.stop()
+    
+# 額外功能：貼上代碼 (保留作為備用)
+with st.sidebar.expander("或者：直接貼上 JSON 代碼"):
+    user_input = st.text_area("貼上 NotebookLM 生成的 JSON", height=100)
+    if st.button("載入貼上的題目"):
+        try:
+            pasted_data = json.loads(user_input)
+            if isinstance(pasted_data, list):
+                st.session_state.quiz_library["(貼上的題目)"] = pasted_data
+                st.session_state.current_quiz_name = "(貼上的題目)" # 強制切換
+                st.rerun()
+        except:
+             st.error("JSON 格式錯誤")
 
 # 重置按鈕
-if st.sidebar.button("🔄 重置測驗"):
-    for key in st.session_state.keys():
-        del st.session_state[key]
+if st.sidebar.button("🔄 重置目前測驗"):
+    st.session_state.current_q_index = 0
+    st.session_state.score = 0
+    st.session_state.quiz_finished = False
+    st.session_state.answer_submitted = False
     st.rerun()
+
+# 顯示目前題庫數量
+st.sidebar.markdown(f"--- \n *目前題庫中有 {len(st.session_state.quiz_library)} 份測驗*")
 
 
 # ==========================================
@@ -93,7 +129,7 @@ st.set_page_config(page_title="溫習 Quiz", page_icon="📝")
 
 # 標題
 st.title("📝 輕鬆溫習 Time")
-st.caption("由 NotebookLM 生成題目 x Streamlit 呈現")
+st.caption(f"目前測驗：{st.session_state.get('current_quiz_name', '預設題目')}")
 
 # 顯示進度條
 if not st.session_state.quiz_finished:
@@ -154,8 +190,7 @@ else:
         
         if st.session_state.user_choice == question_data['answer']:
             st.success("✅ 答對了！")
-            # 這裡可以換成你喜歡的圖片/GIF網址
-            st.image("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbmM1cHR4cGlueDN4aGZ6b3Z4aGZ6b3Z4aGZ6b3Z4aGZ6b3Z4aGZ6b3Z4/nNxT5qXR02jBO/giphy.gif", width=200) 
+            # 這裡移除了原本的圖片代碼
         else:
             st.error(f"❌ 答錯了！")
             st.markdown(f"**正確答案是：** `{question_data['answer']}`")
