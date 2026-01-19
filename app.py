@@ -3,6 +3,105 @@ import json
 import os
 
 # ==========================================
+# 0. 頁面設定 & CSS 樣式 (必須放最前面)
+# ==========================================
+st.set_page_config(page_title="溫習 Quiz", page_icon="📝")
+
+# 自訂 CSS (兒童風格)
+st.markdown("""
+<style>
+/* 全域字體 */
+html, body, [class*="css"] {
+    font-family: 'Comic Sans MS', 'Chalkboard SE', 'Arial Rounded MT Bold', sans-serif;
+}
+
+/* 背景顏色與圖案 */
+.stApp {
+    background-color: #E0F7FA; /* 淡藍色背景 */
+    background-image: radial-gradient(#B2EBF2 20%, transparent 20%),
+                      radial-gradient(#B2EBF2 20%, transparent 20%);
+    background-position: 0 0, 10px 10px;
+    background-size: 20px 20px;
+}
+
+/* 題目卡片 */
+.question-card {
+    background-color: #FFFFFF;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    border: 4px solid #FFAB91; /* 橘粉色邊框 */
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.question-text {
+    font-size: 28px !important;
+    color: #37474F;
+    font-weight: bold;
+    line-height: 1.5;
+}
+
+/* 按鈕美化 */
+.stButton button {
+    background: linear-gradient(to bottom, #FFEB3B, #FDD835) !important; /* 黃色漸層 */
+    color: #5D4037 !important;
+    border: 3px solid #FBC02D !important;
+    border-radius: 30px !important;
+    font-size: 22px !important;
+    padding: 10px 40px !important;
+    font-weight: bold !important;
+    box-shadow: 0 5px 0 #F9A825 !important;
+    transition: all 0.1s;
+    width: 100%;
+}
+
+.stButton button:hover {
+    transform: translateY(3px) !important;
+    box-shadow: 0 2px 0 #F9A825 !important;
+    background: linear-gradient(to bottom, #FFF176, #FFEE58) !important;
+}
+
+.stButton button:active {
+    transform: translateY(5px) !important;
+    box-shadow: none !important;
+}
+
+/* 側邊欄 */
+[data-testid="stSidebar"] {
+    background-color: #FFF3E0;
+    border-right: 3px dashed #FFCC80;
+}
+
+/* 選項 Radio Button */
+.stRadio label {
+    font-size: 20px !important;
+    background-color: rgba(255,255,255,0.6);
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 5px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: block; /* 讓選項佔滿寬度 */
+}
+
+.stRadio label:hover {
+    background-color: #FFFFFF;
+    border-color: #4DB6AC;
+    transform: scale(1.02);
+}
+
+/* 進度條顏色 */
+.stProgress > div > div > div > div {
+    background-color: #4DB6AC;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+
+# ==========================================
 # 1. 題目來源設定 (Sidebar)
 # ==========================================
 st.sidebar.header("題目設定")
@@ -164,7 +263,7 @@ if 'user_choice' not in st.session_state:
 # ==========================================
 # 3. 介面設計
 # ==========================================
-st.set_page_config(page_title="溫習 Quiz", page_icon="📝")
+
 
 # 標題
 st.title("📝 輕鬆溫習 Time")
@@ -203,7 +302,13 @@ if st.session_state.quiz_finished:
 else:
     question_data = quiz_data[st.session_state.current_q_index]
     
-    st.subheader(f"Q{st.session_state.current_q_index + 1}: {question_data['question']}")
+    # st.subheader(f"Q{st.session_state.current_q_index + 1}: {question_data['question']}")
+    st.markdown(f"""
+    <div class="question-card">
+        <div style="font-size: 20px; color: #EF5350; margin-bottom: 10px;">Question {st.session_state.current_q_index + 1}</div>
+        <div class="question-text">{question_data['question']}</div>
+    </div>
+    """, unsafe_allow_html=True)
     
     # 如果還沒回答，顯示表單
     if not st.session_state.answer_submitted:
