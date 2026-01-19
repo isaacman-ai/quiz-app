@@ -124,8 +124,8 @@ with st.sidebar.expander("或者：直接貼上 JSON 代碼"):
                 st.session_state.quiz_library["(貼上的題目)"] = pasted_data
                 st.session_state.current_quiz_name = "(貼上的題目)" # 強制切換
                 st.rerun()
-        except:
-             st.error("JSON 格式錯誤")
+        except Exception as e:
+             st.error(f"JSON 格式錯誤: {e}")
 
 # 重置按鈕
 if st.sidebar.button("🔄 重置目前測驗"):
