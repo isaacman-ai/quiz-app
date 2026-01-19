@@ -57,7 +57,8 @@ uploaded_files = st.sidebar.file_uploader("上傳 .json 檔案 (可多選)", typ
 
 if uploaded_files:
     # 儲存按鈕
-    if st.sidebar.button("📥 儲存到題庫 (永久保存)"):
+    save_btn = st.sidebar.button("📥 儲存到暫存區 (Server)")
+    if save_btn:
         if not os.path.exists(quizzes_dir):
             os.makedirs(quizzes_dir)
         
@@ -72,7 +73,8 @@ if uploaded_files:
                 st.sidebar.error(f"儲存失敗 {uploaded_file.name}: {e}")
         
         if saved_count > 0:
-            st.sidebar.success(f"已儲存 {saved_count} 份測驗！")
+            st.sidebar.success(f"已儲存 {saved_count} 份測驗到伺服器！")
+            st.sidebar.info("注意：在 Streamlit Cloud 上，這些檔案會在重啟後消失。若要永久保存，請將檔案上傳至 GitHub。")
             st.rerun()
 
     for uploaded_file in uploaded_files:
