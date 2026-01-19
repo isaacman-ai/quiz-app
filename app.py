@@ -56,7 +56,27 @@ if "預設題目" not in st.session_state.quiz_library:
 uploaded_files = st.sidebar.file_uploader("上傳 .json 檔案 (可多選)", type=["json"], accept_multiple_files=True)
 
 if uploaded_files:
+    # 儲存按鈕
+    if st.sidebar.button("📥 儲存到題庫 (永久保存)"):
+        if not os.path.exists(quizzes_dir):
+            os.makedirs(quizzes_dir)
+        
+        saved_count = 0
+        for uploaded_file in uploaded_files:
+            try:
+                uploaded_file.seek(0)
+                with open(os.path.join(quizzes_dir, uploaded_file.name), "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+                saved_count += 1
+            except Exception as e:
+                st.sidebar.error(f"儲存失敗 {uploaded_file.name}: {e}")
+        
+        if saved_count > 0:
+            st.sidebar.success(f"已儲存 {saved_count} 份測驗！")
+            st.rerun()
+
     for uploaded_file in uploaded_files:
+        uploaded_file.seek(0) # 確保讀取位置正確
         # 使用檔名作為 key
         file_name = uploaded_file.name
         if file_name not in st.session_state.quiz_library:
